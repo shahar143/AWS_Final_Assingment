@@ -1,0 +1,86 @@
+*{
+    margin: 0;
+    padding: 0;
+    font-family: "Outfit", sans-serif;
+
+    box-sizing: border-box;  
+}
+
+body{
+    background-color: #b770d3;
+}
+.main{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+}
+.heading h2{
+    text-align: center;
+    font-weight: bold;
+    margin: 1rem;
+    font-size: 2.7rem;
+}
+label{
+    font-weight: 600;
+}
+.login-box{
+    margin-top: 3rem;
+    box-shadow: 7px 7px 0px 1px rgba(0,0,0,1);
+    -webkit-box-shadow: 7px 7px 0px 1px rgba(0,0,0,1);
+    -moz-box-shadow: 7px 7px 0px 1px rgba(0,0,0,1);
+    padding: 3rem;
+    background-color: white;
+    border: 4px black solid;
+
+}
+.f{
+    display: block;
+    padding: 15px;
+    margin-bottom: 12px;
+    border: 3px solid black;
+    transition: 0.2s ease-in-out;
+    font-weight: 700;
+
+}
+input[type="checkbox"]{
+    accent-color: black;
+border:  2px black solid;
+    padding: 5px;
+
+}
+
+.f:focus{
+    transition: 0.3s ease-in-out;
+    outline: none;
+    box-shadow: 7px 7px 0px 1px rgba(0,0,0,1);
+    -webkit-box-shadow: 7px 7px 0px 1px rgba(0,0,0,1);
+    -moz-box-shadow: 7px 7px 0px 1px rgba(0,0,0,1);
+}
+.submit-btn button{
+padding: 15px;
+background-color: black;
+color: white;
+font-weight: 700;
+border: none;
+margin-top: 1rem;
+width: 100%;
+transition: 0.2s ease-in-out;
+}
+
+.submit-btn button:hover{
+    transform: scale(1.1);
+    transition: 0.3s ease-in-out;
+}
+.sign-up-to{
+    margin-top: 1rem;
+
+}
+.sign-up-to p{
+    color: rgb(63, 63, 63);
+}
+.sign-up-to a{
+    color: black;
+    font-weight: bold;
+    text-decoration: none;
+}
