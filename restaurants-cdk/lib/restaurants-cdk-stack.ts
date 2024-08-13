@@ -1,12 +1,15 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { AutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-//import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as elasticache from 'aws-cdk-lib/aws-elasticache';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
 
-export class RestaurantsCdkStack extends cdk.Stack {
+export class InstaPhotoCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
     const useCacheFlag = true;
@@ -21,14 +24,15 @@ export class RestaurantsCdkStack extends cdk.Stack {
 
     this.createNatGatewayForPrivateSubnet(vpc);
 
-    //const table = this.createDynamoDBTable();
+    const table = this.createDynamoDBTable();
 
     // Create an S3 bucket
     const deploymentBucket = this.deployTheApplicationArtifactToS3Bucket(labRole);
 
-    // new cdk.CfnOutput(this, 'Run Test Command', {
-    //   value: `TABLE_NAME='${table.tableName}' AWS_REGION='${this.region}' npm test`,
-    // });
+
+    new cdk.CfnOutput(this, 'Run Test Command', {
+      value: `TABLE_NAME='${table.tableName}' AWS_REGION='${this.region}' npm test`,
+    });
 
   }
 
@@ -89,22 +93,22 @@ export class RestaurantsCdkStack extends cdk.Stack {
     return bucket;
   }
 
-  // private createDynamoDBTable() {
-  //   // Students TODO: Change the table schema as needed
+  private createDynamoDBTable() {
+    // Students TODO: Change the table schema as needed
 
-  //   const table = new dynamodb.Table(this, 'Restaurants', {
-  //     partitionKey: { name: 'SimpleKey', type: dynamodb.AttributeType.STRING },
-  //     removalPolicy: cdk.RemovalPolicy.DESTROY,
-  //     billingMode: dynamodb.BillingMode.PROVISIONED,
-  //     readCapacity: 1, // Note for students: you may need to change this num read capacity for scaling testing if you belive that is right
-  //     writeCapacity: 1, // Note for students: you may need to change this num write capacity for scaling testing if you belive that is right
-  //   });
+    const table = new dynamodb.Table(this, 'users', {
+      partitionKey: { name: 'SimpleKey', type: dynamodb.AttributeType.STRING },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      billingMode: dynamodb.BillingMode.PROVISIONED,
+      readCapacity: 1, // Note for students: you may need to change this num read capacity for scaling testing if you belive that is right
+      writeCapacity: 1, // Note for students: you may need to change this num write capacity for scaling testing if you belive that is right
+    });
 
-  //   // Output the table name
-  //   new cdk.CfnOutput(this, 'TableName', {
-  //     value: table.tableName,
-  //   });
+    // Output the table name
+    new cdk.CfnOutput(this, 'TableName', {
+      value: table.tableName,
+    });
 
-  //   return table;
-  // }
+    return table;
+  }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { RestaurantsCdkStack } from '../lib/restaurants-cdk-stack';
+import { InstaPhotoCdkStack } from '../lib/restaurants-cdk-stack';
 
 import { DefaultStackSynthesizer } from 'aws-cdk-lib';
 
@@ -46,7 +46,7 @@ const defaultStackSynthesizer = new DefaultStackSynthesizer({
 });
 
 const app = new cdk.App();
-new RestaurantsCdkStack(app, 'RestaurantsCdkStack', {
+new InstaPhotoCdkStack(app, 'InstaPhotoCdkStack', {
   synthesizer: defaultStackSynthesizer,
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
