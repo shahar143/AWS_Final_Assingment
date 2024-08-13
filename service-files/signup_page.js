@@ -26,3 +26,12 @@ profilePictureInput.addEventListener('change', function() {
         profileImagePreview.style.display = 'none';
     }
 });
+
+document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Perform your sign-up logic here (e.g., send the form data to your server)
+
+    // After successful sign-up, redirect to index.html
+    window.location.href = 'index.html';
+});

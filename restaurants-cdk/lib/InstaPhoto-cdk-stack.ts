@@ -1,12 +1,11 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { AutoScalingGroup } from 'aws-cdk-lib/aws-autoscaling';
-import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as elasticache from 'aws-cdk-lib/aws-elasticache';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
 
 export class InstaPhotoCdkStack extends cdk.Stack {
@@ -26,6 +25,13 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
     const table = this.createDynamoDBTable();
 
+    const checkUserLambda = this.createLambdaAuthorizeUsers(table, labRole);
+
+    // Grant Lambda permission to read from the DynamoDB table
+    table.grantReadData(checkUserLambda);
+
+    const api_gateway_checkUserLambda = this.createAPIGateway(checkUserLambda);
+
     // Create an S3 bucket
     const deploymentBucket = this.deployTheApplicationArtifactToS3Bucket(labRole);
 
@@ -34,6 +40,34 @@ export class InstaPhotoCdkStack extends cdk.Stack {
       value: `TABLE_NAME='${table.tableName}' AWS_REGION='${this.region}' npm test`,
     });
 
+  }
+
+  private createLambdaAuthorizeUsers(table: cdk.aws_dynamodb.Table, labRole: cdk.aws_iam.IRole) {
+    // Lambda Function to Check User Credentials
+    const checkUserLambda = new lambda.Function(this, 'CheckUserLambda', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset('lambda'), // Assumes your lambda code is in a 'lambda' directory
+      handler: 'checkUser.handler',
+      environment: {
+        USERS_TABLE: table.tableName,
+      },
+      role: labRole,
+    });
+
+    return checkUserLambda;
+  }
+
+  private createAPIGateway(lambda: lambda.Function) {
+    const api = new apigateway.LambdaRestApi(this, 'InstaPhotoApi', {
+      restApiName: 'InstaPhoto Service',
+      description: 'This service handles user login.',
+      handler: lambda,
+      proxy: false,
+    });
+        
+    // Define the '/checkUser' resource with a GET method
+    const checkUserResource = api.root.addResource('checkUser');
+    checkUserResource.addMethod('GET');
   }
 
   private createNatGatewayForPrivateSubnet(vpc: cdk.aws_ec2.IVpc) {
@@ -97,7 +131,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     // Students TODO: Change the table schema as needed
 
     const table = new dynamodb.Table(this, 'users', {
-      partitionKey: { name: 'SimpleKey', type: dynamodb.AttributeType.STRING },
+      partitionKey: { name: 'email', type: dynamodb.AttributeType.STRING },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 1, // Note for students: you may need to change this num read capacity for scaling testing if you belive that is right
