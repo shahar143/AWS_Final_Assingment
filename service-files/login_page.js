@@ -4,7 +4,7 @@ document.querySelector('form').addEventListener('submit', async function(e) {
   const email = document.getElementById('mail').value;
   const password = document.getElementById('password').value;
 
-  const response = await fetch('https://iqzu84wd7b.execute-api.us-east-1.amazonaws.com/prod/checkuser', {
+  const response = await fetch('https://ma36vpuk6l.execute-api.us-east-1.amazonaws.com/prod/checkUser', {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json',

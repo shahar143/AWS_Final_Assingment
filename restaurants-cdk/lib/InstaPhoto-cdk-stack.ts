@@ -31,6 +31,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     table.grantReadData(checkUserLambda);
 
     const api_gateway_checkUserLambda = this.createAPIGateway(checkUserLambda);
+    process.env.API_URL = api_gateway_checkUserLambda.url;
 
     // Create an S3 bucket
     const deploymentBucket = this.deployTheApplicationArtifactToS3Bucket(labRole);
@@ -63,11 +64,18 @@ export class InstaPhotoCdkStack extends cdk.Stack {
       description: 'This service handles user login.',
       handler: lambda,
       proxy: false,
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS, // Allow all HTTP methods
+      },
     });
         
     // Define the '/checkUser' resource with a GET method
     const checkUserResource = api.root.addResource('checkUser');
     checkUserResource.addMethod('GET');
+    checkUserResource.addMethod('POST');
+
+    return api;
   }
 
   private createNatGatewayForPrivateSubnet(vpc: cdk.aws_ec2.IVpc) {
@@ -109,6 +117,9 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     // Note for students: This is for deployment purposes. you shold not change this code.
     const bucket = new s3.Bucket(this, 'DeploymentArtifact', {
       removalPolicy: cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE,
+      websiteIndexDocument: 'index.html',
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
+      
     });
 
     // Deploy the website content to the S3 bucket
