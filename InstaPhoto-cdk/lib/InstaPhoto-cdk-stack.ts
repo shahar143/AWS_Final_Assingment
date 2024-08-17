@@ -25,13 +25,12 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
     const table = this.createDynamoDBTable();
 
-    const checkUserLambda = this.createLambdaAuthorizeUsers(table, labRole);
+    const GetUserById = this.createLambdaGetUserById(table.tableName, labRole);
 
     // Grant Lambda permission to read from the DynamoDB table
-    table.grantReadData(checkUserLambda);
+    table.grantReadData(GetUserById);
 
-    const api_gateway_checkUserLambda = this.createAPIGateway(checkUserLambda);
-    process.env.API_URL = api_gateway_checkUserLambda.url;
+    const apiGatewayGetUserById = this.createAPIGateway(GetUserById);
 
     // Create an S3 bucket
     const deploymentBucket = this.deployTheApplicationArtifactToS3Bucket(labRole);
@@ -43,30 +42,33 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
   }
 
-  private createLambdaAuthorizeUsers(table: cdk.aws_dynamodb.Table, labRole: cdk.aws_iam.IRole) {
+  private createLambdaGetUserById(tableName: string, labRole: cdk.aws_iam.IRole) {
     // Lambda Function to Check User Credentials
-    const checkUserLambda = new cdk.aws_lambda.Function(this, 'CheckUserLambda', {
+    const getUserById = new cdk.aws_lambda.Function(this, 'GetUserById', {
       runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
-      handler: 'checkUser.handler',
-      code: cdk.aws_lambda.Code.fromAsset('lambda'),
+      handler: 'GetUserById.handler',
+      code: cdk.aws_lambda.Code.fromAsset('GetUserById'),
+      environment: {
+        TABLE_NAME: tableName,
+      },
       role: labRole, // important for the lab so the cdk will not create a new role
     });
 
-    return checkUserLambda;
+    return getUserById;
   }
 
   private createAPIGateway(lambda: lambda.Function) {
     const api = new cdk.aws_apigateway.RestApi(this, 'InstaPhotoApi', {
       restApiName: 'InstaPhoto Service',
-      description: 'This service handles user login.',
+      description: 'This service Get User By Id',
       defaultCorsPreflightOptions: {
         allowOrigins: cdk.aws_apigateway.Cors.ALL_ORIGINS,
         allowMethods: cdk.aws_apigateway.Cors.ALL_METHODS
       }
     });
 
-    const checkUser = api.root.addResource('checkUser');
-    checkUser.addMethod('POST', new cdk.aws_apigateway.LambdaIntegration(lambda));
+    const getUserById = api.root.addResource('getUserById');
+    getUserById.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(lambda));
 
     return api;
   }
