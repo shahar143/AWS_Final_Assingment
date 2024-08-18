@@ -3,7 +3,9 @@ const API_GATEWAY_URL = "https://8eew5n7ijb.execute-api.us-east-1.amazonaws.com/
 module.exports = {
     GetUserByIdFunction,
     AddUserFunction,
-    DeleteUserFunction
+    DeleteUserFunction,
+    UploadProfilePictureFunction,
+    GeneratePresignedUrlFunction,
 };
 
 async function GetUserByIdFunction(email) {
@@ -70,4 +72,47 @@ async function DeleteUserFunction(email) {
     }
 }
 
+async function UploadProfilePictureFunction(email, profilePicture) {
+    try {
+        const response = await fetch(`${API_GATEWAY_URL}/UploadProfilePicture`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, profilePicture }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+async function GeneratePresignedUrlFunction(email) {
+    try {
+        const response = await fetch(`${API_GATEWAY_URL}/GenPresignedURL`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result.preSignedUrl;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
 

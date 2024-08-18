@@ -33,15 +33,17 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const GetUserById = this.createLambdaGetUserById(table.tableName, labRole, vpc);
     const AddUser = this.createLambdaAddUser(table.tableName, labRole, vpc);
     const DeleteUser = this.createLambdaDeleteUser(table.tableName, labRole, vpc);
-    const UploadProfilePicture = this.uploadProfilePictureToS3Bucket(table.tableName, labRole, profilePictureBucket, imageProcessingQueue, vpc);
+    const UploadProfilePicture = this.uploadProfilePicture(table.tableName, labRole, profilePictureBucket, imageProcessingQueue, vpc);
+    const GenPreSignedUrl = this.genPreSignedUrl(table.tableName, labRole, profilePictureBucket, vpc);
 
     // Grant Lambda permission to read from the DynamoDB table
     table.grantReadWriteData(GetUserById);
     table.grantReadWriteData(AddUser);
     table.grantReadWriteData(DeleteUser);
     table.grantReadWriteData(UploadProfilePicture);
+    table.grantReadWriteData(GenPreSignedUrl);
 
-    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser, UploadProfilePicture);
+    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser, UploadProfilePicture, GenPreSignedUrl);
 
 
     new cdk.CfnOutput(this, 'Run Test Command', {
@@ -50,12 +52,12 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
   }
 
-  private createLambdaGetUserById(tableName: string, labRole: cdk.aws_iam.IRole, vpc: ec2.IVpc) {
+  private createLambdaGetUserById(tableName: string, labRole: iam.IRole, vpc: ec2.IVpc) {
     // Lambda Function to Check User Credentials
-    const getUserById = new cdk.aws_lambda.Function(this, 'GetUserById', {
-      runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
+    const getUserById = new lambda.Function(this, 'GetUserById', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'GetUserById.handler',
-      code: cdk.aws_lambda.Code.fromAsset('GetUserById'),
+      code: lambda.Code.fromAsset('lambdas'),
       environment: {
         TABLE_NAME: tableName,
       },
@@ -67,11 +69,11 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return getUserById;
   }
 
-  private uploadProfilePictureToS3Bucket(tableName: string, labRole: cdk.aws_iam.IRole, profilePictureBucket: s3.Bucket, imageProcessingQueue: sqs.Queue, vpc: ec2.IVpc) {
-    const uploadProfilePicture = new cdk.aws_lambda.Function(this, 'UploadProfilePicture', {
-      runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
+  private uploadProfilePicture(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket, imageProcessingQueue: sqs.Queue, vpc: ec2.IVpc) {
+    const uploadProfilePicture = new lambda.Function(this, 'UploadProfilePicture', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'UploadProfilePicture.handler',
-      code: cdk.aws_lambda.Code.fromAsset('UploadProfilePicture'),
+      code: lambda.Code.fromAsset('lambdas'),
       environment: {
         TABLE_NAME: tableName,
         BUCKET_NAME: profilePictureBucket.bucketName,
@@ -87,13 +89,30 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return uploadProfilePicture;
 }
 
+private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket, vpc: ec2.IVpc) {
+  const genPreSignedUrl = new lambda.Function(this, 'GenPreSignedUrl', {
+    runtime: lambda.Runtime.NODEJS_LATEST,
+    handler: 'GenPreSignedUrl.handler',
+    code: lambda.Code.fromAsset('lambdas'),
+    environment: {
+      TABLE_NAME: tableName,
+      BUCKET_NAME: profilePictureBucket.bucketName,
+    },
+    vpc: vpc,
+    vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
+    role: labRole,
+  });
 
-  private createLambdaAddUser(tableName: string, labRole: cdk.aws_iam.IRole, vpc: ec2.IVpc) {
+  return genPreSignedUrl;
+}
+
+
+  private createLambdaAddUser(tableName: string, labRole: iam.IRole, vpc: ec2.IVpc) {
     // Lambda Function to Check User Credentials
-    const addUser = new cdk.aws_lambda.Function(this, 'AddUser', {
-      runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
+    const addUser = new lambda.Function(this, 'AddUser', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'AddUser.handler',
-      code: cdk.aws_lambda.Code.fromAsset('AddUser'),
+      code: lambda.Code.fromAsset('lambdas'),
       environment: {
         TABLE_NAME: tableName,
       },
@@ -105,12 +124,12 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return addUser;
   }
 
-  private createLambdaDeleteUser(tableName: string, labRole: cdk.aws_iam.IRole, vpc: ec2.IVpc) {
+  private createLambdaDeleteUser(tableName: string, labRole: iam.IRole, vpc: ec2.IVpc) {
     // Lambda Function to Check User Credentials
-    const deleteUser = new cdk.aws_lambda.Function(this, 'DeleteUser', {
-      runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
+    const deleteUser = new lambda.Function(this, 'DeleteUser', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'DeleteUser.handler',
-      code: cdk.aws_lambda.Code.fromAsset('DeleteUser'),
+      code: lambda.Code.fromAsset('lambdas'),
       environment: {
         TABLE_NAME: tableName,
       },
@@ -122,8 +141,8 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return deleteUser;
   }
 
-  private createAPIGateway(getUserByIdLambda: lambda.Function, addUserLambda: lambda.Function, deleteUserLambda: lambda.Function, uploadProfilePictureLambda: lambda.Function) {
-    const api = new cdk.aws_apigateway.RestApi(this, 'InstaPhotoApi', {
+  private createAPIGateway(getUserByIdLambda: lambda.Function, addUserLambda: lambda.Function, deleteUserLambda: lambda.Function, uploadProfilePictureLambda: lambda.Function, genPreSignedUrlLambda: lambda.Function) {
+    const api = new apigateway.RestApi(this, 'InstaPhotoApi', {
       restApiName: 'InstaPhoto Service',
       description: 'This service Get User By Id',
     });
@@ -142,10 +161,13 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const uploadProfilePicture = api.root.addResource('UploadProfilePicture');
     uploadProfilePicture.addMethod('POST', new cdk.aws_apigateway.LambdaIntegration(uploadProfilePictureLambda));
 
+    const genPreSignedUrl = api.root.addResource('GenPreSignedUrl');
+    genPreSignedUrl.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(genPreSignedUrlLambda));
+
     return api;
   }
 
-  private createProfilePictureBucket(labRole: cdk.aws_iam.IRole) {
+  private createProfilePictureBucket(labRole: iam.IRole) {
     const profilePictureBucket = new s3.Bucket(this, 'ProfilePictureBucket', {
       bucketName: 'HSPPBucket',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -156,7 +178,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return profilePictureBucket;
   }
 
-  private creatreImageProcessingQueue(labRole: cdk.aws_iam.IRole) {
+  private creatreImageProcessingQueue(labRole: iam.IRole) {
     const imageProcessingQueue = new sqs.Queue(this, 'ImageProcessingQueue', {
       queueName: 'HSIqueue',
       visibilityTimeout: cdk.Duration.seconds(300), // Timeout for processing image tasks
@@ -166,8 +188,9 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return imageProcessingQueue
   }
 
-  private deployTheApplicationArtifactToS3Bucket(labRole: cdk.aws_iam.IRole) {
+  private deployTheApplicationArtifactToS3Bucket(labRole: iam.IRole) {
     const bucket = new s3.Bucket(this, 'DeploymentArtifact', {
+      bucketName: 'HSBDArtifact',
       removalPolicy: cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE,
       websiteIndexDocument: 'index.html',
       objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
@@ -192,7 +215,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return bucket;
   }
 
-  private createDynamoDBTable(labRole: cdk.aws_iam.IRole) {
+  private createDynamoDBTable(labRole: iam.IRole) {
     // Students TODO: Change the table schema as needed
 
     const table = new dynamodb.Table(this, 'users', {

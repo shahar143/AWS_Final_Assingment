@@ -1,3 +1,5 @@
+const API = require('./API.js');
+
 function togglePasswordVisibility() {
     var passwordInput = document.getElementById("password");
     var showPasswordCheckbox = document.getElementById("showPassword");
@@ -27,17 +29,41 @@ profilePictureInput.addEventListener('change', function() {
     }
 });
 
-document.querySelector('form').addEventListener('submit', function(e) {
+document.querySelector('form').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const email = document.getElementById('mail').value;
     const password = document.getElementById('password').value;
     const phone = document.getElementById('phone').value;
-    const profilePicture = document.getElementById('profilePicture').files[0];
+    const profilePictureInput = document.getElementById('profilePicture');
+    const file = profilePictureInput.files[0];
 
-    const result = API.AddUserFunction(email, password, phone); 
-    if (result) {
-        alert('User added successfully');
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = async function(event) {
+            const base64Image = event.target.result.split(',')[1]; // Get the base64 part of the image
+
+            // Upload the profile picture
+            try {
+                await API.UploadProfilePictureFunction(email, base64Image);
+                alert('Profile picture uploaded successfully!');
+
+                // Generate the pre-signed URL
+                const preSignedUrl = await API.GeneratePresignedUrlFunction(email);
+                alert('Access your profile picture here: ' + preSignedUrl);
+
+                // Create the user
+                const addUserResult = await API.AddUserFunction(email, password, phone); 
+                if (addUserResult) {
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                alert('Failed: ' + error.message);
+            }
+        };
+
+        reader.readAsDataURL(file);
     }
-    window.location.href = 'index.html';
 });
+
