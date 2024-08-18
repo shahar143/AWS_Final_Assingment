@@ -23,11 +23,15 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const table = this.createDynamoDBTable(labRole);
 
     const GetUserById = this.createLambdaGetUserById(table.tableName, labRole, vpc);
+    const AddUser = this.createLambdaAddUser(table.tableName, labRole, vpc);
+    const DeleteUser = this.createLambdaDeleteUser(table.tableName, labRole, vpc);
 
     // Grant Lambda permission to read from the DynamoDB table
     table.grantReadWriteData(GetUserById);
+    table.grantReadWriteData(AddUser);
+    table.grantReadWriteData(DeleteUser);
 
-    const apiGatewayGetUserById = this.createAPIGateway(GetUserById);
+    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser);
 
     // Create an S3 bucket
     const deploymentBucket = this.deployTheApplicationArtifactToS3Bucket(labRole);
@@ -56,15 +60,56 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return getUserById;
   }
 
-  private createAPIGateway(lambda: lambda.Function) {
+  private createLambdaAddUser(tableName: string, labRole: cdk.aws_iam.IRole, vpc: ec2.IVpc) {
+    // Lambda Function to Check User Credentials
+    const addUser = new cdk.aws_lambda.Function(this, 'AddUser', {
+      runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
+      handler: 'AddUser.handler',
+      code: cdk.aws_lambda.Code.fromAsset('AddUser'),
+      environment: {
+        TABLE_NAME: tableName,
+      },
+      vpc: vpc, 
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
+      role: labRole, // important for the lab so the cdk will not create a new role
+    });
+
+    return addUser;
+  }
+
+  private createLambdaDeleteUser(tableName: string, labRole: cdk.aws_iam.IRole, vpc: ec2.IVpc) {
+    // Lambda Function to Check User Credentials
+    const deleteUser = new cdk.aws_lambda.Function(this, 'DeleteUser', {
+      runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
+      handler: 'DeleteUser.handler',
+      code: cdk.aws_lambda.Code.fromAsset('DeleteUser'),
+      environment: {
+        TABLE_NAME: tableName,
+      },
+      vpc: vpc, 
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
+      role: labRole, // important for the lab so the cdk will not create a new role
+    });
+
+    return deleteUser;
+  }
+
+  private createAPIGateway(getUserByIdLambda: lambda.Function, addUserLambda: lambda.Function, deleteUserLambda: lambda.Function) {
     const api = new cdk.aws_apigateway.RestApi(this, 'InstaPhotoApi', {
       restApiName: 'InstaPhoto Service',
       description: 'This service Get User By Id',
     });
 
     const getUserById = api.root.addResource('GetUserById');
-    const getUserByIdParam = getUserById.addResource('{userId}');
-    getUserByIdParam.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(lambda));
+    const getUserByIdParam = getUserById.addResource('{email}');
+    getUserByIdParam.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(getUserByIdLambda));
+
+    const addUser = api.root.addResource('AddUser');
+    addUser.addMethod('POST', new cdk.aws_apigateway.LambdaIntegration(addUserLambda));
+
+    const deleteUser = api.root.addResource('DeleteUser');
+    const deleteUserParam = deleteUser.addResource('{email}');
+    deleteUserParam.addMethod('DELETE', new cdk.aws_apigateway.LambdaIntegration(deleteUserLambda));
 
     return api;
   }

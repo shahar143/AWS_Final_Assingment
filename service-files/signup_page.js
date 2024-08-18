@@ -30,8 +30,14 @@ profilePictureInput.addEventListener('change', function() {
 document.querySelector('form').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // Perform your sign-up logic here (e.g., send the form data to your server)
+    const email = document.getElementById('mail').value;
+    const password = document.getElementById('password').value;
+    const phone = document.getElementById('phone').value;
+    const profilePicture = document.getElementById('profilePicture').files[0];
 
-    // After successful sign-up, redirect to index.html
+    const result = API.AddUserFunction(email, password, phone); 
+    if (result) {
+        alert('User added successfully');
+    }
     window.location.href = 'index.html';
 });

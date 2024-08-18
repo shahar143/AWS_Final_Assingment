@@ -6,17 +6,11 @@ document.querySelector('form').addEventListener('submit', async function(e) {
   const email = document.getElementById('mail').value;
   const password = document.getElementById('password').value;
 
-  const result = await API.GetUserByIdFunction(email, password);
-  if (result.Item.key == email) {
+  const result = await API.GetUserByIdFunction(email);
+  if (result.Item.key == email && result.Item.password == password) {
     window.location.href = 'posts_page.html';
   } else {
     alert('Invalid username or password');
-  }
-
-  if (result.success) {
-      window.location.href = 'posts_page.html';
-  } else {
-      alert('Invalid username or password');
   }
 });
 

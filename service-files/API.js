@@ -1,6 +1,12 @@
-const API_GATEWAY_URL = "https://1q7axts2l4.execute-api.us-east-1.amazonaws.com/prod/";
+const API_GATEWAY_URL = "https://8eew5n7ijb.execute-api.us-east-1.amazonaws.com/prod/";
 
-async function GetUserByIdFunction(email, password) {
+module.exports = {
+    GetUserByIdFunction,
+    AddUserFunction,
+    DeleteUserFunction
+};
+
+async function GetUserByIdFunction(email) {
     try {
         const response = await fetch(`${API_GATEWAY_URL}/GetUserById/${email}`, {
             method: 'GET',
