@@ -7,7 +7,6 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
-import { get } from 'http';
 
 export class InstaPhotoCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

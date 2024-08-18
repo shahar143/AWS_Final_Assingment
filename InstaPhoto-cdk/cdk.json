@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --prefer-ts-exts bin/InstaPhoto-cdk.ts",
+  "app": "npx ts-node --prefer-ts-exts bin/instaphoto-cdk.ts",
   "watch": {
     "include": [
       "**"

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { InstaPhotoCdkStack } from '../lib/InstaPhoto-cdk-stack';
+import { InstaPhotoCdkStack } from '../lib/instaphoto-cdk-stack';
 
 import { DefaultStackSynthesizer } from 'aws-cdk-lib';
 

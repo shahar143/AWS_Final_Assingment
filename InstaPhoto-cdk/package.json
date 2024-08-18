@@ -1,8 +1,8 @@
 {
-  "name": "restaurants-cdk",
+  "name": "instaphoto-cdk",
   "version": "0.1.0",
   "bin": {
-    "restaurants-cdk": "bin/restaurants-cdk.js"
+    "instaphoto-cdk": "bin/instaPhoto-cdk.js"
   },
   "scripts": {
     "build": "tsc",
