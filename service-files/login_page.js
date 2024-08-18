@@ -5,7 +5,7 @@ document.querySelector('form').addEventListener('submit', async function(e) {
   const password = document.getElementById('password').value;
 
   const response = await fetch('https://tx0t6x8j18.execute-api.us-east-1.amazonaws.com/prod/', {
-      method: 'POST',
+      method: 'GET',
       headers: {
           'Content-Type': 'application/json',
       },

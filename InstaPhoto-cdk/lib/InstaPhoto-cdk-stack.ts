@@ -7,6 +7,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as s3Deployment from 'aws-cdk-lib/aws-s3-deployment';
+import { get } from 'http';
 
 export class InstaPhotoCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -23,12 +24,12 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
     this.createNatGatewayForPrivateSubnet(vpc);
 
-    const table = this.createDynamoDBTable();
+    const table = this.createDynamoDBTable(labRole);
 
     const GetUserById = this.createLambdaGetUserById(table.tableName, labRole);
 
     // Grant Lambda permission to read from the DynamoDB table
-    table.grantReadData(GetUserById);
+    table.grantReadWriteData(GetUserById);
 
     const apiGatewayGetUserById = this.createAPIGateway(GetUserById);
 
@@ -61,13 +62,9 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const api = new cdk.aws_apigateway.RestApi(this, 'InstaPhotoApi', {
       restApiName: 'InstaPhoto Service',
       description: 'This service Get User By Id',
-      defaultCorsPreflightOptions: {
-        allowOrigins: cdk.aws_apigateway.Cors.ALL_ORIGINS,
-        allowMethods: cdk.aws_apigateway.Cors.ALL_METHODS
-      }
     });
 
-    const getUserById = api.root.addResource('getUserById');
+    const getUserById = api.root.addResource('email');
     getUserById.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(lambda));
 
     return api;
@@ -133,16 +130,19 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return bucket;
   }
 
-  private createDynamoDBTable() {
+  private createDynamoDBTable(labRole: cdk.aws_iam.IRole) {
     // Students TODO: Change the table schema as needed
 
     const table = new dynamodb.Table(this, 'users', {
+      tableName: 'users',
       partitionKey: { name: 'email', type: dynamodb.AttributeType.STRING },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       billingMode: dynamodb.BillingMode.PROVISIONED,
       readCapacity: 1, // Note for students: you may need to change this num read capacity for scaling testing if you belive that is right
       writeCapacity: 1, // Note for students: you may need to change this num write capacity for scaling testing if you belive that is right
     });
+
+    table.grantFullAccess(labRole); 
 
     // Output the table name
     new cdk.CfnOutput(this, 'TableName', {
