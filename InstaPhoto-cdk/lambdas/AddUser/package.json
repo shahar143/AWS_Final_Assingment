@@ -1,0 +1,15 @@
+{
+  "name": "adduser",
+  "version": "1.0.0",
+  "main": "AddUser.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "aws-sdk": "^2.1677.0"
+  }
+}
