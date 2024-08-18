@@ -12,21 +12,18 @@ import { get } from 'http';
 export class InstaPhotoCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
-    const useCacheFlag = true;
 
     // Students TODO Account Details: Change to your account id
-    const labRole = iam.Role.fromRoleArn(this, 'Role', "arn:aws:iam::771045402253:role/LabRole", { mutable: false });
+    const labRole = iam.Role.fromRoleArn(this, 'Role', "arn:aws:iam::648440372507:role/LabRole", { mutable: false });
 
     // Students TODO Account Details: Change the vpcId to the VPC ID of your existing VPC
     const vpc = ec2.Vpc.fromLookup(this, 'VPC', {
-      vpcId: 'vpc-09abe69b266555013',
+      vpcId: 'vpc-0db6a0e723bdca343',
     });
-
-    this.createNatGatewayForPrivateSubnet(vpc);
 
     const table = this.createDynamoDBTable(labRole);
 
-    const GetUserById = this.createLambdaGetUserById(table.tableName, labRole);
+    const GetUserById = this.createLambdaGetUserById(table.tableName, labRole, vpc);
 
     // Grant Lambda permission to read from the DynamoDB table
     table.grantReadWriteData(GetUserById);
@@ -43,7 +40,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
   }
 
-  private createLambdaGetUserById(tableName: string, labRole: cdk.aws_iam.IRole) {
+  private createLambdaGetUserById(tableName: string, labRole: cdk.aws_iam.IRole, vpc: ec2.IVpc) {
     // Lambda Function to Check User Credentials
     const getUserById = new cdk.aws_lambda.Function(this, 'GetUserById', {
       runtime: cdk.aws_lambda.Runtime.NODEJS_LATEST,
@@ -52,6 +49,8 @@ export class InstaPhotoCdkStack extends cdk.Stack {
       environment: {
         TABLE_NAME: tableName,
       },
+      vpc: vpc, 
+      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
       role: labRole, // important for the lab so the cdk will not create a new role
     });
 
@@ -64,49 +63,14 @@ export class InstaPhotoCdkStack extends cdk.Stack {
       description: 'This service Get User By Id',
     });
 
-    const getUserById = api.root.addResource('email');
-    getUserById.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(lambda));
+    const getUserById = api.root.addResource('GetUserById');
+    const getUserByIdParam = getUserById.addResource('{userId}');
+    getUserByIdParam.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(lambda));
 
     return api;
   }
 
-  private createNatGatewayForPrivateSubnet(vpc: cdk.aws_ec2.IVpc) {
-    // Note for students: This is for cost reduction purposes. you shold not change this code.
-
-    // create elastic IP for nat gateway
-    const cfnEip = new ec2.CfnEIP(this, 'MyCfnEIP', {
-      domain: 'vpc',
-    });
-
-    // create nat gateway for private subnet
-    const cfnNatGateway = new ec2.CfnNatGateway(this, 'MyCfnNatGateway', {
-      subnetId: vpc.publicSubnets[0].subnetId,
-      allocationId: cfnEip.attrAllocationId,
-    });
-
-    // create route table for private subnet
-    const cfnRouteTable = new ec2.CfnRouteTable(this, 'MyCfnRouteTable', {
-      vpcId: vpc.vpcId,
-    });
-
-    // create route for private subnet to the nat in case of internet access
-    new ec2.CfnRoute(this, 'MyCfnRoute', {
-      routeTableId: cfnRouteTable.ref,
-      destinationCidrBlock: '0.0.0.0/0',
-      natGatewayId: cfnNatGateway.ref,
-    });
-
-    // associate the route table with the private subnet
-    vpc.privateSubnets.forEach((subnet, index) => {
-      new ec2.CfnSubnetRouteTableAssociation(this, `MyCfnSubnetRouteTableAssociation${index}`, {
-        routeTableId: cfnRouteTable.ref,
-        subnetId: subnet.subnetId,
-      });
-    });
-  }
-
   private deployTheApplicationArtifactToS3Bucket(labRole: cdk.aws_iam.IRole) {
-    // Note for students: This is for deployment purposes. you shold not change this code.
     const bucket = new s3.Bucket(this, 'DeploymentArtifact', {
       removalPolicy: cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE,
       websiteIndexDocument: 'index.html',

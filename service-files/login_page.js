@@ -1,18 +1,17 @@
+const API = require('./API.js');
+
 document.querySelector('form').addEventListener('submit', async function(e) {
   e.preventDefault();
 
   const email = document.getElementById('mail').value;
   const password = document.getElementById('password').value;
 
-  const response = await fetch('https://tx0t6x8j18.execute-api.us-east-1.amazonaws.com/prod/', {
-      method: 'GET',
-      headers: {
-          'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username: email, password: password }),
-  });
-
-  const result = await response.json();
+  const result = await API.GetUserByIdFunction(email, password);
+  if (result.Item.key == email) {
+    window.location.href = 'posts_page.html';
+  } else {
+    alert('Invalid username or password');
+  }
 
   if (result.success) {
       window.location.href = 'posts_page.html';

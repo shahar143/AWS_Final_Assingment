@@ -61,7 +61,7 @@ new InstaPhotoCdkStack(app, 'InstaPhotoCdkStack', {
 
 
   // Students TODO Account Details: change the account and region to your own
-  env: { account: '771045402253', region: 'us-east-1' },
+  env: { account: '648440372507', region: 'us-east-1' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 });
