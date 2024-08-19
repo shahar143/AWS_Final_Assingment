@@ -30,11 +30,11 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
     const imageProcessingQueue = this.creatreImageProcessingQueue(labRole);
 
-    const GetUserById = this.createLambdaGetUserById(table.tableName, labRole, vpc);
-    const AddUser = this.createLambdaAddUser(table.tableName, labRole, vpc);
-    const DeleteUser = this.createLambdaDeleteUser(table.tableName, labRole, vpc);
-    const UploadProfilePicture = this.uploadProfilePicture(table.tableName, labRole, profilePictureBucket, imageProcessingQueue, vpc);
-    const GenPreSignedUrl = this.genPreSignedUrl(table.tableName, labRole, profilePictureBucket, vpc);
+    const GetUserById = this.createLambdaGetUserById(table.tableName, labRole);
+    const AddUser = this.createLambdaAddUser(table.tableName, labRole);
+    const DeleteUser = this.createLambdaDeleteUser(table.tableName, labRole);
+    const UploadProfilePicture = this.uploadProfilePicture(table.tableName, labRole, profilePictureBucket, imageProcessingQueue);
+    const GenPreSignedUrl = this.genPreSignedUrl(table.tableName, labRole, profilePictureBucket);
 
     // Grant Lambda permission to read from the DynamoDB table
     table.grantReadWriteData(GetUserById);
@@ -52,12 +52,12 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
   }
 
-  private createLambdaGetUserById(tableName: string, labRole: iam.IRole, vpc: ec2.IVpc) {
+  private createLambdaGetUserById(tableName: string, labRole: iam.IRole) {
     // Lambda Function to Check User Credentials
     const getUserById = new lambda.Function(this, 'GetUserById', {
       runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'GetUserById.handler',
-      code: lambda.Code.fromAsset('lambdas'),
+      code: lambda.Code.fromAsset('GetUserById'),
       environment: {
         TABLE_NAME: tableName,
       },
@@ -71,7 +71,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const uploadProfilePicture = new lambda.Function(this, 'UploadProfilePicture', {
       runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'UploadProfilePicture.handler',
-      code: lambda.Code.fromAsset('lambdas'),
+      code: lambda.Code.fromAsset('UploadProfilePicture'),
       environment: {
         TABLE_NAME: tableName,
         BUCKET_NAME: profilePictureBucket.bucketName,
@@ -88,14 +88,12 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket) {
   const genPreSignedUrl = new lambda.Function(this, 'GenPreSignedUrl', {
     runtime: lambda.Runtime.NODEJS_LATEST,
-    handler: 'GenPreSignedUrl.handler',
-    code: lambda.Code.fromAsset('lambdas'),
+    handler: 'GenPreSignURL.handler',
+    code: lambda.Code.fromAsset('GenPreSignURL'),
     environment: {
       TABLE_NAME: tableName,
       BUCKET_NAME: profilePictureBucket.bucketName,
     },
-    vpc: vpc,
-    vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
     role: labRole,
   });
 
@@ -108,12 +106,10 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
     const addUser = new lambda.Function(this, 'AddUser', {
       runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'AddUser.handler',
-      code: lambda.Code.fromAsset('lambdas'),
+      code: lambda.Code.fromAsset('AddUser'),
       environment: {
         TABLE_NAME: tableName,
       },
-      vpc: vpc, 
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
       role: labRole, // important for the lab so the cdk will not create a new role
     });
 
@@ -125,12 +121,10 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
     const deleteUser = new lambda.Function(this, 'DeleteUser', {
       runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'DeleteUser.handler',
-      code: lambda.Code.fromAsset('lambdas'),
+      code: lambda.Code.fromAsset('DeleteUser'),
       environment: {
         TABLE_NAME: tableName,
       },
-      vpc: vpc, 
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
       role: labRole, // important for the lab so the cdk will not create a new role
     });
 
@@ -165,7 +159,7 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 
   private createProfilePictureBucket(labRole: iam.IRole) {
     const profilePictureBucket = new s3.Bucket(this, 'ProfilePictureBucket', {
-      bucketName: 'HSPPBucket',
+      bucketName: 'hsppbucket',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // Ensures security by blocking public access
     });
@@ -176,7 +170,7 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 
   private creatreImageProcessingQueue(labRole: iam.IRole) {
     const imageProcessingQueue = new sqs.Queue(this, 'ImageProcessingQueue', {
-      queueName: 'HSIqueue',
+      queueName: 'hsiqueue',
       visibilityTimeout: cdk.Duration.seconds(300), // Timeout for processing image tasks
     });
       
@@ -186,7 +180,7 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 
   private deployTheApplicationArtifactToS3Bucket(labRole: iam.IRole) {
     const bucket = new s3.Bucket(this, 'DeploymentArtifact', {
-      bucketName: 'HSBDArtifact',
+      bucketName: 'hsbdartifact',
       removalPolicy: cdk.RemovalPolicy.RETAIN_ON_UPDATE_OR_DELETE,
       websiteIndexDocument: 'index.html',
       objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
