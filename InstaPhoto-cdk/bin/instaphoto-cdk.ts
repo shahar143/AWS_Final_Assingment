@@ -41,6 +41,8 @@ const defaultStackSynthesizer = new DefaultStackSynthesizer({
   // Name of the SSM parameter which describes the bootstrap stack version number
   bootstrapStackVersionSsmParameter: "/cdk-bootstrap/${Qualifier}/version",
 
+  
+
   // Add a rule to every template which verifies the required bootstrap stack version
   generateBootstrapVersionRule: true,
 });
