@@ -61,15 +61,13 @@ export class InstaPhotoCdkStack extends cdk.Stack {
       environment: {
         TABLE_NAME: tableName,
       },
-      vpc: vpc, 
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
       role: labRole, // important for the lab so the cdk will not create a new role
     });
 
     return getUserById;
   }
 
-  private uploadProfilePicture(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket, imageProcessingQueue: sqs.Queue, vpc: ec2.IVpc) {
+  private uploadProfilePicture(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket, imageProcessingQueue: sqs.Queue) {
     const uploadProfilePicture = new lambda.Function(this, 'UploadProfilePicture', {
       runtime: lambda.Runtime.NODEJS_LATEST,
       handler: 'UploadProfilePicture.handler',
@@ -79,8 +77,6 @@ export class InstaPhotoCdkStack extends cdk.Stack {
         BUCKET_NAME: profilePictureBucket.bucketName,
         QUEUE_URL: imageProcessingQueue.queueUrl, 
       },
-      vpc: vpc,
-      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }, 
       role: labRole,
     });
 
@@ -89,7 +85,7 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     return uploadProfilePicture;
 }
 
-private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket, vpc: ec2.IVpc) {
+private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBucket: s3.Bucket) {
   const genPreSignedUrl = new lambda.Function(this, 'GenPreSignedUrl', {
     runtime: lambda.Runtime.NODEJS_LATEST,
     handler: 'GenPreSignedUrl.handler',
@@ -107,7 +103,7 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 }
 
 
-  private createLambdaAddUser(tableName: string, labRole: iam.IRole, vpc: ec2.IVpc) {
+  private createLambdaAddUser(tableName: string, labRole: iam.IRole) {
     // Lambda Function to Check User Credentials
     const addUser = new lambda.Function(this, 'AddUser', {
       runtime: lambda.Runtime.NODEJS_LATEST,
@@ -124,7 +120,7 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
     return addUser;
   }
 
-  private createLambdaDeleteUser(tableName: string, labRole: iam.IRole, vpc: ec2.IVpc) {
+  private createLambdaDeleteUser(tableName: string, labRole: iam.IRole) {
     // Lambda Function to Check User Credentials
     const deleteUser = new lambda.Function(this, 'DeleteUser', {
       runtime: lambda.Runtime.NODEJS_LATEST,
