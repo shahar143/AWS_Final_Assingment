@@ -14,11 +14,11 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     super(scope, id, props);
 
     // Students TODO Account Details: Change to your account id
-    const labRole = iam.Role.fromRoleArn(this, 'Role', "arn:aws:iam::648440372507:role/LabRole", { mutable: false });
+    const labRole = iam.Role.fromRoleArn(this, 'Role', "arn:aws:iam::771045402253:role/LabRole", { mutable: false });
 
     // Students TODO Account Details: Change the vpcId to the VPC ID of your existing VPC
     const vpc = ec2.Vpc.fromLookup(this, 'VPC', {
-      vpcId: 'vpc-0db6a0e723bdca343',
+      vpcId: 'vpc-09abe69b266555013',
     });
 
     const table = this.createDynamoDBTable(labRole);
