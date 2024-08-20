@@ -101,3 +101,87 @@ describe('InstaPhoto API', () => {
         }
     });
 });
+
+describe('FetchPosts API', () => {
+
+    it('should return all posts successfully', async () => {
+        const response = await axios.get(`${apiUrl}/FetchPosts`);
+        
+        expect(response.status).toBe(200);
+        expect(Array.isArray(response.data)).toBe(true);
+        response.data.forEach(post => {
+            expect(post).toHaveProperty('postId');
+            expect(post).toHaveProperty('username');
+            expect(post).toHaveProperty('email');
+            expect(post).toHaveProperty('location');
+            expect(post).toHaveProperty('timePosted');
+            expect(post).toHaveProperty('imageUrl');
+            expect(post).toHaveProperty('caption');
+        });
+    });
+
+    it('should return 500 if there is an error fetching posts', async () => {
+        try {
+            await axios.get(`${apiUrl}/FetchPosts`);
+        } catch (error) {
+            expect(error.response.status).toBe(500);
+            expect(error.response.data.error).toBe('Could not fetch posts');
+        }
+    });
+});
+
+describe('UploadPost API', () => {
+
+    it('should upload a new post successfully', async () => {
+        const response = await axios.post(`${apiUrl}/UploadPost`, {
+            postId: '1234',
+            username: 'john_doe',
+            email: 'john@example.com',
+            location: 'New York, NY',
+            timePosted: '2024-08-20T12:34:56Z',
+            imageUrl: 'post-image.jpg',
+            caption: 'Enjoying the sunny day!'
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.data.message).toBe('Post uploaded successfully');
+    });
+
+    it('should return 500 if there is an error uploading the post', async () => {
+        try {
+            await axios.post(`${apiUrl}/UploadPost`, {
+                postId: '1234',
+                username: 'john_doe',
+                email: 'john@example.com',
+                location: 'New York, NY',
+                timePosted: '2024-08-20T12:34:56Z',
+                imageUrl: 'post-image.jpg',
+                caption: 'Enjoying the sunny day!'
+            });
+        } catch (error) {
+            expect(error.response.status).toBe(500);
+            expect(error.response.data.error).toBe('Could not upload post');
+        }
+    });
+});
+
+
+describe('PresentFrontPage API', () => {
+
+    it('should return the front page HTML content', async () => {
+        const response = await axios.get(`${apiUrl}/PresentFrontPage`);
+        
+        expect(response.status).toBe(200);
+        expect(response.headers['content-type']).toBe('text/html');
+        expect(response.data).toContain('<html>'); // Assuming your HTML starts with <html>
+    });
+
+    it('should return 500 if there is an error serving the front page', async () => {
+        try {
+            await axios.get(`${apiUrl}/PresentFrontPage`);
+        } catch (error) {
+            expect(error.response.status).toBe(500);
+            expect(error.response.data.error).toBe('Could not load index.html');
+        }
+    });
+});
