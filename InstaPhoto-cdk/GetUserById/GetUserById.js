@@ -3,7 +3,9 @@ const dynamo = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = "users";
 
 exports.handler = async (event) => {
-    const { email_id } = event.pathParameters;
+    const email_id = event.pathParameters.email;
+ 
+    console.log("Getting user with email: ", email_id);
 
     // Validate that the email is provided
     if (!email_id) {
@@ -20,6 +22,7 @@ exports.handler = async (event) => {
 
     try {
         const result = await dynamo.get(params).promise();
+        console.log("User retrieved: ", result.Item);
         if (result.Item) {
             return {
                 statusCode: 200,
