@@ -1,4 +1,8 @@
 // Sidebar
+const AWS = require('aws-sdk');
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const S3 = new AWS.S3();
+
 const menuItems = document.querySelectorAll('.menu-item');
 
 // Messages 
@@ -16,6 +20,71 @@ const colorPalette = document.querySelectorAll('.choose-color span');
 const Bg1 = document.querySelector('.bg-1');
 const Bg2 = document.querySelector('.bg-2');
 const Bg3 = document.querySelector('.bg-3');
+
+
+// Function to fetch posts from the DynamoDB table via API Gateway
+async function fetchAndPresentPosts() {
+    try {
+        // Fetch posts data from DynamoDB using an API Gateway endpoint
+        const result = fetchPostsTable(); 
+
+        // Select the feeds container where posts will be displayed
+        const feedsContainer = document.getElementById('feeds');
+        feedsContainer.innerHTML = ''; // Clear any existing content
+
+        // Iterate over each post and create HTML structure for it
+        posts.forEach(post => {
+            const postElement = document.createElement('div');
+            postElement.classList.add('feed');
+
+            // HTML structure for each post
+            postElement.innerHTML = `
+                <div class="head">
+                    <div class="user">
+                        <div class="profile-photo">
+                            <img src="./images/profile-${post.postId}.jpg" alt="${post.username}">
+                        </div>
+                        <div class="info">
+                            <h3>${post.username}</h3>
+                            <small>${post.location}, ${post.timePosted}</small>
+                        </div>
+                    </div>
+                    <span class="edit">
+                        <i class="uil uil-ellipsis-h"></i>
+                    </span>
+                </div>
+
+                <div class="photo">
+                    <img src="https://postsbucket.s3.amazonaws.com/${post.imageUrl}" alt="Post Image">
+                </div>
+
+                <div class="action-buttons">
+                    <div class="interaction-buttons">
+                        <span><i class="uil uil-heart"></i></span>
+                        <span><i class="uil uil-comment-dots"></i></span>
+                        <span><i class="uil uil-share-alt"></i></span>
+                    </div>
+                    <div class="bookmark">
+                        <span><i class="uil uil-bookmark-full"></i></span>
+                    </div>
+                </div>
+
+                <div class="caption">
+                    <p><b>${post.username}</b> ${post.caption}</p>
+                </div>
+            `;
+
+            // Append the post element to the feeds container
+            feedsContainer.appendChild(postElement);
+        });
+    } catch (error) {
+        console.error('Error fetching and presenting posts:', error);
+    }
+}
+
+// Call the function when the page loads
+document.addEventListener('DOMContentLoaded', fetchAndPresentPosts);
+
 
 
 // ============== SIDEBAR ============== 

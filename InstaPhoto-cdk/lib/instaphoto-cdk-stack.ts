@@ -23,6 +23,8 @@ export class InstaPhotoCdkStack extends cdk.Stack {
 
     const table = this.createDynamoDBTable(labRole);
 
+    const postsTable = this.createDynamoDBPostsTable(labRole); 
+
     const profilePictureBucket = this.createProfilePictureBucket(labRole);
 
     // Create an S3 bucket
@@ -36,6 +38,8 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const UploadProfilePicture = this.uploadProfilePicture(table.tableName, labRole, profilePictureBucket, imageProcessingQueue);
     const GenPreSignedUrl = this.genPreSignedUrl(table.tableName, labRole, profilePictureBucket);
 
+    const FetchPosts = this.createLambdafetchPosts(postsTable.tableName, labRole);
+
     // Grant Lambda permission to read from the DynamoDB table
     table.grantReadWriteData(GetUserById);
     table.grantReadWriteData(AddUser);
@@ -43,7 +47,9 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     table.grantReadWriteData(UploadProfilePicture);
     table.grantReadWriteData(GenPreSignedUrl);
 
-    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser, UploadProfilePicture, GenPreSignedUrl);
+    postsTable.grantReadWriteData(FetchPosts);
+
+    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser, UploadProfilePicture, GenPreSignedUrl, FetchPosts);
 
 
     new cdk.CfnOutput(this, 'Run Test Command', {
@@ -131,7 +137,23 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
     return deleteUser;
   }
 
-  private createAPIGateway(getUserByIdLambda: lambda.Function, addUserLambda: lambda.Function, deleteUserLambda: lambda.Function, uploadProfilePictureLambda: lambda.Function, genPreSignedUrlLambda: lambda.Function) {
+  private createLambdafetchPosts(tableName: string, labRole: iam.IRole) {
+    // Lambda Function to Check User Credentials
+    const fetchPosts = new lambda.Function(this, 'FetchPosts', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
+      handler: 'FetchPosts.handler',
+      code: lambda.Code.fromAsset('FetchPosts'),
+      environment: {
+        TABLE_NAME: tableName,
+      },
+      role: labRole, // important for the lab so the cdk will not create a new role
+    });
+
+    return fetchPosts;
+  }
+
+  private createAPIGateway(getUserByIdLambda: lambda.Function, addUserLambda: lambda.Function, deleteUserLambda: lambda.Function, 
+    uploadProfilePictureLambda: lambda.Function, genPreSignedUrlLambda: lambda.Function, fetchPosts: lambda.Function) {
     const api = new apigateway.RestApi(this, 'InstaPhotoApi', {
       restApiName: 'InstaPhoto Service',
       description: 'This service Get User By Id',
@@ -153,6 +175,9 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 
     const genPreSignedUrl = api.root.addResource('GenPreSignedUrl');
     genPreSignedUrl.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(genPreSignedUrlLambda));
+
+    const fetchPostsResource = api.root.addResource('FetchPosts');
+    fetchPostsResource.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(fetchPosts));
 
     return api;
   }
@@ -226,4 +251,27 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 
     return table;
   }
+
+  private createDynamoDBPostsTable(labRole: iam.IRole) {
+    // Define the DynamoDB table with a partition key and a sort key
+    const table = new dynamodb.Table(this, 'posts', {
+        tableName: 'posts',
+        partitionKey: { name: 'postId', type: dynamodb.AttributeType.STRING },
+        sortKey: { name: 'timePosted', type: dynamodb.AttributeType.STRING }, // Adding the sort key
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        billingMode: dynamodb.BillingMode.PROVISIONED,
+        readCapacity: 1, // Adjust based on your needs
+        writeCapacity: 1, // Adjust based on your needs
+    });
+
+    // Grant full access to the table for the specified role
+    table.grantFullAccess(labRole);
+
+    // Output the table name
+    new cdk.CfnOutput(this, 'TableName', {
+        value: table.tableName,
+    });
+
+    return table;
+}
 }

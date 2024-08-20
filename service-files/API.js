@@ -116,3 +116,25 @@ async function GeneratePresignedUrlFunction(email) {
     }
 }
 
+async function fetchPostsTable() {
+    try {
+        const response = await fetch(`${API_GATEWAY_URL}/posts`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result; 
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+
