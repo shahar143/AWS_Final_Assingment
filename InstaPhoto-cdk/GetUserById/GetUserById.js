@@ -4,7 +4,7 @@ const TABLE_NAME = "users";
 
 exports.handler = async (event) => {
     const email_id = event.pathParameters.email;
-
+ 
     console.log("Getting user with email: ", email_id);
 
     // Validate that the email is provided
