@@ -118,7 +118,7 @@ async function GeneratePresignedUrlFunction(email) {
 
 async function fetchPostsTable() {
     try {
-        const response = await fetch(`${API_GATEWAY_URL}/posts`, {
+        const response = await fetch(`${API_GATEWAY_URL}/FetchPosts`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -136,5 +136,48 @@ async function fetchPostsTable() {
         throw error;
     }
 }
+
+async function uploadPostFunction(post) {
+    try {
+        const response = await fetch(`${API_GATEWAY_URL}/UploadPost`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(post),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        return result; 
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}
+
+async function presentFrontPage() {
+    try {
+        const response = await fetch(`${API_GATEWAY_URL}/PresentFrontPage`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.text();
+        return result; 
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+}   
 
 

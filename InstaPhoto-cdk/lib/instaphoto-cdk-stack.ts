@@ -37,8 +37,10 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     const DeleteUser = this.createLambdaDeleteUser(table.tableName, labRole);
     const UploadProfilePicture = this.uploadProfilePicture(table.tableName, labRole, profilePictureBucket, imageProcessingQueue);
     const GenPreSignedUrl = this.genPreSignedUrl(table.tableName, labRole, profilePictureBucket);
-
+    const presentFrontPage = this.createLambdaPresentFrontPage(table.tableName, labRole);
+  
     const FetchPosts = this.createLambdafetchPosts(postsTable.tableName, labRole);
+    const UploadPost = this.createLambdaUploadPosts(postsTable.tableName, labRole);
 
     // Grant Lambda permission to read from the DynamoDB table
     table.grantReadWriteData(GetUserById);
@@ -48,8 +50,9 @@ export class InstaPhotoCdkStack extends cdk.Stack {
     table.grantReadWriteData(GenPreSignedUrl);
 
     postsTable.grantReadWriteData(FetchPosts);
+    postsTable.grantReadWriteData(UploadPost);
 
-    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser, UploadProfilePicture, GenPreSignedUrl, FetchPosts);
+    const apiGatewayGetUserById = this.createAPIGateway(GetUserById, AddUser, DeleteUser, UploadProfilePicture, GenPreSignedUrl, FetchPosts, UploadPost, presentFrontPage);
 
 
     new cdk.CfnOutput(this, 'Run Test Command', {
@@ -152,8 +155,39 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
     return fetchPosts;
   }
 
+  private createLambdaUploadPosts(tableName: string, labRole: iam.IRole) {
+    // Lambda Function to Check User Credentials
+    const uploadPost = new lambda.Function(this, 'UploadPost', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
+      handler: 'UploadPost.handler',
+      code: lambda.Code.fromAsset('UploadPost'),
+      environment: {
+        TABLE_NAME: tableName,
+      },
+      role: labRole, // important for the lab so the cdk will not create a new role
+    });
+
+    return uploadPost;
+  }
+
+  private createLambdaPresentFrontPage(tableName: string, labRole: iam.IRole) {
+    // Lambda Function to Check User Credentials
+    const presentFrontPage = new lambda.Function(this, 'PresentFrontPage', {
+      runtime: lambda.Runtime.NODEJS_LATEST,
+      handler: 'PresentFrontPage.handler',
+      code: lambda.Code.fromAsset('PresentFrontPage'),
+      environment: {
+        TABLE_NAME: tableName,
+      },
+      role: labRole, // important for the lab so the cdk will not create a new role
+    });
+
+    return presentFrontPage;
+  }
+
   private createAPIGateway(getUserByIdLambda: lambda.Function, addUserLambda: lambda.Function, deleteUserLambda: lambda.Function, 
-    uploadProfilePictureLambda: lambda.Function, genPreSignedUrlLambda: lambda.Function, fetchPosts: lambda.Function) {
+    uploadProfilePictureLambda: lambda.Function, genPreSignedUrlLambda: lambda.Function, fetchPosts: lambda.Function, 
+    uploadPost: lambda.Function, presentFrontPage: lambda.Function) {
     const api = new apigateway.RestApi(this, 'InstaPhotoApi', {
       restApiName: 'InstaPhoto Service',
       description: 'This service Get User By Id',
@@ -178,6 +212,12 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
 
     const fetchPostsResource = api.root.addResource('FetchPosts');
     fetchPostsResource.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(fetchPosts));
+
+    const uploadPostResource = api.root.addResource('UploadPost');
+    uploadPostResource.addMethod('POST', new cdk.aws_apigateway.LambdaIntegration(uploadPost));
+
+    const presentFrontPageResource = api.root.addResource('PresentFrontPage');
+    presentFrontPageResource.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(presentFrontPage));
 
     return api;
   }
