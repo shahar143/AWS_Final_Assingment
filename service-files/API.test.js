@@ -108,6 +108,27 @@ describe('DeleteUserFunction', () => {
     });
 });
 
+describe('DeleteUserFunction', () => {
+    it('should return Email is required error when called without an email', async () => {
+        const result = await API.DeleteUserFunction();
+        expect(result).toEqual({ error: 'Email is required' });
+    });
+});
+
+describe('DeleteUserFunction', () => {
+    it('should return error could not delete user when called with an email that does not exist', async () => {
+        const mockResponse = {
+            ok: true,
+            json: async () => ({ error: 'Could not delete user' }),
+        };
+
+        fetch.mockResolvedValue(mockResponse);
+
+        const result = await API.DeleteUserFunction('test@example.com');
+        expect(result).toEqual({ error: 'Could not delete user' });
+    });
+});
+
 describe('UploadProfilePictureFunction', () => {
     it('should return a success message when the profile picture is uploaded successfully', async () => {
         const mockResponse = {
