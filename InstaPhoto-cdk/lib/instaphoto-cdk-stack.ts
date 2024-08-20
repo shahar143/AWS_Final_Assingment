@@ -216,7 +216,7 @@ private genPreSignedUrl(tableName: string, labRole: iam.IRole, profilePictureBuc
     const uploadPostResource = api.root.addResource('UploadPost');
     uploadPostResource.addMethod('POST', new cdk.aws_apigateway.LambdaIntegration(uploadPost));
 
-    const presentFrontPageResource = api.root.addResource('PresentFrontPage');
+    const presentFrontPageResource = api.root.addResource('PresentFrontPage'); //ok
     presentFrontPageResource.addMethod('GET', new cdk.aws_apigateway.LambdaIntegration(presentFrontPage));
 
     return api;
