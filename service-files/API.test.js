@@ -150,3 +150,108 @@ describe('UploadProfilePictureFunction', () => {
     });
 });
 
+describe('UploadPostFunction', () => {
+    it('should return success message when post is uploaded successfully', async () => {
+        const mockResponse = {
+            ok: true,
+            json: async () => ({ message: 'Post uploaded successfully' }),
+        };
+
+        fetch.mockResolvedValue(mockResponse);
+
+        const postData = {
+            postId: '1234',
+            username: 'john_doe',
+            email: 'john@example.com',
+            location: 'New York, NY',
+            timePosted: '2024-08-20T12:34:56Z',
+            imageUrl: 'post-image.jpg',
+            caption: 'Enjoying the sunny day!',
+        };
+
+        const result = await API.UploadPostFunction(postData);
+        expect(result).toEqual({ message: 'Post uploaded successfully' });
+    });
+
+    it('should throw an error when the response is not ok', async () => {
+        const mockResponse = { ok: false, status: 500 };
+        fetch.mockResolvedValue(mockResponse);
+
+        const postData = {
+            postId: '1234',
+            username: 'john_doe',
+            email: 'john@example.com',
+            location: 'New York, NY',
+            timePosted: '2024-08-20T12:34:56Z',
+            imageUrl: 'post-image.jpg',
+            caption: 'Enjoying the sunny day!',
+        };
+
+        await expect(API.UploadPostFunction(postData)).rejects.toThrow('HTTP error! status: 500');
+    });
+
+    it('should return an error message when required fields are missing', async () => {
+        const result = await API.UploadPostFunction({});
+        expect(result).toEqual({ error: 'Post data is required' });
+    });
+});
+
+describe('PresentFrontPageFunction', () => {
+    it('should return the HTML content of the front page', async () => {
+        const mockResponse = {
+            ok: true,
+            text: async () => '<html><body>Front Page</body></html>',
+        };
+
+        fetch.mockResolvedValue(mockResponse);
+
+        const result = await API.PresentFrontPageFunction();
+        expect(result).toEqual('<html><body>Front Page</body></html>');
+    });
+
+    it('should throw an error when the response is not ok', async () => {
+        const mockResponse = { ok: false, status: 500 };
+        fetch.mockResolvedValue(mockResponse);
+
+        await expect(API.PresentFrontPageFunction()).rejects.toThrow('HTTP error! status: 500');
+    });
+});
+
+describe('fetchPostsFunction', () => {
+    it('should return a list of posts when fetched successfully', async () => {
+        const mockResponse = {
+            ok: true,
+            json: async () => [
+                { postId: '1234', username: 'john_doe', email: 'john@example.com', location: 'New York, NY', timePosted: '2024-08-20T12:34:56Z', imageUrl: 'post-image.jpg', caption: 'Enjoying the sunny day!' }
+            ],
+        };
+
+        fetch.mockResolvedValue(mockResponse);
+
+        const result = await API.fetchPostsFunction();
+        expect(result).toEqual([
+            { postId: '1234', username: 'john_doe', email: 'john@example.com', location: 'New York, NY', timePosted: '2024-08-20T12:34:56Z', imageUrl: 'post-image.jpg', caption: 'Enjoying the sunny day!' }
+        ]);
+    });
+
+    it('should throw an error when the response is not ok', async () => {
+        const mockResponse = { ok: false, status: 500 };
+        fetch.mockResolvedValue(mockResponse);
+
+        await expect(API.fetchPostsFunction()).rejects.toThrow('HTTP error! status: 500');
+    });
+
+    it('should return an error when no posts are found', async () => {
+        const mockResponse = {
+            ok: true,
+            json: async () => ({ error: 'No posts found' }),
+        };
+
+        fetch.mockResolvedValue(mockResponse);
+
+        const result = await API.fetchPostsFunction();
+        expect(result).toEqual({ error: 'No posts found' });
+    });
+});
+
+
